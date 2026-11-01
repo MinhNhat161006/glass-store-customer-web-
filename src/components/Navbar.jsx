@@ -9,6 +9,9 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openAuthMod
     { id: 'records', label: 'Hồ Sơ Thị Lực' },
     { id: 'warranty', label: 'Tra Cứu Bảo Hành' },
     { id: 'orders', label: 'Đơn Hàng' },
+    { id: 'stores', label: 'Cửa Hàng' },
+    { id: 'vouchers', label: 'Ưu Đãi & VIP' },
+    { id: 'policy', label: 'Chính Sách' },
   ];
 
   return (
@@ -78,8 +81,13 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openAuthMod
         <div className="flex items-center gap-2.5">
           {/* Notifications button */}
           <button 
+            onClick={() => setActiveTab('notifications')}
             aria-label="Thông báo"
-            className="relative p-2 text-slate-600 hover:text-[#074768] hover:bg-slate-100 rounded-full transition"
+            className={`relative p-2 rounded-full transition ${
+              activeTab === 'notifications' 
+                ? 'text-[#074768] bg-[#e0f2fe]' 
+                : 'text-slate-600 hover:text-[#074768] hover:bg-slate-100'
+            }`}
           >
             <Bell className="w-5 h-5" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>

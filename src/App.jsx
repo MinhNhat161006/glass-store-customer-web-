@@ -7,12 +7,21 @@ import ProductDetailPage from './components/ProductDetailPage';
 import OptometryBookingPage from './components/OptometryBookingPage';
 import VisionRecordPage from './components/VisionRecordPage';
 import WarrantyCenterPage from './components/WarrantyCenterPage';
+import ClaimWarrantyPage from './components/ClaimWarrantyPage';
+import PolicyPage from './components/PolicyPage';
 import OrdersPage from './components/OrdersPage';
+import OrderDetailHubPage from './components/OrderDetailHubPage';
+import ReviewFeedbackPage from './components/ReviewFeedbackPage';
+import StoreLocationsPage from './components/StoreLocationsPage';
+import NotificationCenterPage from './components/NotificationCenterPage';
+import VoucherLoyaltyPage from './components/VoucherLoyaltyPage';
 import AuthModal from './components/AuthModal';
 import CartDrawer from './components/CartDrawer';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'products' | 'product-detail' | 'booking' | 'records' | 'warranty' | 'orders'
+  const [activeTab, setActiveTab] = useState('home'); 
+  // 'home' | 'products' | 'product-detail' | 'booking' | 'records' | 'warranty' | 'claim-warranty' | 'policy' | 'orders' | 'order-hub' | 'review'
+  
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProductDetail, setSelectedProductDetail] = useState(null);
@@ -82,9 +91,10 @@ export default function App() {
   };
 
   const handleCheckout = () => {
-    alert('Đơn hàng kính mắt của bạn đã được tiếp nhận thành công! Chuyên viên OptiVision sẽ liên hệ xác nhận thông số mài lắp qua SĐT.');
     setCart([]);
     setIsCartOpen(false);
+    setActiveTab('order-hub'); // Chuyển sang màn hình xác nhận gia công Delta 200
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -120,7 +130,7 @@ export default function App() {
           />
         )}
 
-        {/* Screen 3: Chi Tiết Sản Phẩm & Cấu Hình Lắp Tròng Y Khoa (Ảnh 4 & 5 mới) */}
+        {/* Screen 3: Chi Tiết Sản Phẩm & Cấu Hình Lắp Tròng Y Khoa */}
         {activeTab === 'product-detail' && (
           <ProductDetailPage
             product={selectedProductDetail}
@@ -129,14 +139,14 @@ export default function App() {
           />
         )}
 
-        {/* Screen 4: Đặt Lịch Đo Mắt (Ảnh 4 trước) */}
+        {/* Screen 4: Đặt Lịch Đo Mắt */}
         {activeTab === 'booking' && (
           <OptometryBookingPage
             setActiveTab={setActiveTab}
           />
         )}
 
-        {/* Screen 5: Hồ Sơ Thị Lực Điện Tử & Toa Kính Lâm Sàng (Ảnh 1 mới) */}
+        {/* Screen 5: Hồ Sơ Thị Lực Điện Tử & Toa Kính Lâm Sàng */}
         {activeTab === 'records' && (
           <VisionRecordPage
             setActiveTab={setActiveTab}
@@ -144,16 +154,65 @@ export default function App() {
           />
         )}
 
-        {/* Screen 6: Trung Tâm Bảo Hành & Hậu Mãi Khúc Xạ (Ảnh 2 & 3) */}
+        {/* Screen 6: Trung Tâm Bảo Hành & Tra Cứu Hậu Mãi */}
         {activeTab === 'warranty' && (
           <WarrantyCenterPage
             setActiveTab={setActiveTab}
           />
         )}
 
-        {/* Screen 7: Quản Lý Đơn Hàng & Tiến Trình Gia Công */}
+        {/* Screen 7: Gửi Yêu Cầu Bảo Hành & Đổi Trả Kính 4 Bước */}
+        {activeTab === 'claim-warranty' && (
+          <ClaimWarrantyPage
+            setActiveTab={setActiveTab}
+          />
+        )}
+
+        {/* Screen 8: Chính Sách Bảo Hành & Quyền Lợi Hậu Mãi Toàn Diện */}
+        {activeTab === 'policy' && (
+          <PolicyPage
+            setActiveTab={setActiveTab}
+          />
+        )}
+
+        {/* Screen 9: Danh Sách Đơn Hàng Của Khách Hàng */}
         {activeTab === 'orders' && (
           <OrdersPage
+            setActiveTab={setActiveTab}
+          />
+        )}
+
+        {/* Screen 10: Phiếu Xác Nhận Đơn Hàng, Mã QR Check-in & Tiến Độ Lab Delta 200 */}
+        {activeTab === 'order-hub' && (
+          <OrderDetailHubPage
+            setActiveTab={setActiveTab}
+          />
+        )}
+
+        {/* Screen 11: Đánh Giá Trải Nghiệm Mắt Kính & Dịch Vụ Khúc Xạ */}
+        {activeTab === 'review' && (
+          <ReviewFeedbackPage
+            setActiveTab={setActiveTab}
+          />
+        )}
+
+        {/* Screen 12: Hệ Thống Cửa Hàng & Phòng Đo Khúc Xạ Chuẩn Y Khoa */}
+        {activeTab === 'stores' && (
+          <StoreLocationsPage
+            setActiveTab={setActiveTab}
+          />
+        )}
+
+        {/* Screen 13: Trung Tâm Thông Báo & Cập Nhật Hệ Thống */}
+        {activeTab === 'notifications' && (
+          <NotificationCenterPage
+            setActiveTab={setActiveTab}
+          />
+        )}
+
+        {/* Screen 14: Kho Voucher & Trung Tâm Điểm Thưởng OptiVIP */}
+        {activeTab === 'vouchers' && (
+          <VoucherLoyaltyPage
             setActiveTab={setActiveTab}
           />
         )}
@@ -172,7 +231,7 @@ export default function App() {
         checkout={handleCheckout}
       />
 
-      {/* 5. Modal Đăng Nhập / Đăng Ký (Ảnh 1 trước) */}
+      {/* 5. Modal Đăng Nhập / Đăng Ký */}
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
