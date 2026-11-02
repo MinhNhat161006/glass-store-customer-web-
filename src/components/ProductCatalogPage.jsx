@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { productApi } from '../api/productApi';
 import { 
   Search, SlidersHorizontal, Grid, List, Check, ArrowRight, 
   ChevronDown, ShieldCheck, X 
@@ -13,6 +14,41 @@ export default function ProductCatalogPage({ onAddToCart, setActiveTab, onViewDe
   const [selectedShowroom, setSelectedShowroom] = useState(['Q1']);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [sortBy, setSortBy] = useState('NEWEST');
+  const [realProducts, setRealProducts] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchLiveProducts = async () => {
+      try {
+        setLoading(true);
+        const data = await productApi.getAllProducts();
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((p, idx) => {
+            const v = (p.variants && p.variants.length > 0) ? p.variants[0] : null;
+            return {
+              id: p.id,
+              sku: v ? v.sku : ('SKU-00' + p.id),
+              name: p.name,
+              specs: 'Tiêu chuẩn quốc tế ISO 13666',
+              category: p.productType || 'FRAME',
+              shape: (v && v.frameShape) ? v.frameShape.toUpperCase() : 'RECTANGLE',
+              material: (v && v.material) ? v.material.toUpperCase() : 'TITANIUM',
+              colors: ['#1e293b', '#64748b', '#0369a1'],
+              description: p.description,
+              price: v ? Number(v.price) : 2500000,
+              image: (v && v.imageUrl) ? v.imageUrl : 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&w=600&q=80',
+            };
+          });
+          setRealProducts(mapped);
+        }
+      } catch (err) {
+        console.warn('Real catalog fetch notice:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLiveProducts();
+  }, []);
 
   // Products Dataset khớp 100% Ảnh 3
   const allProducts = [

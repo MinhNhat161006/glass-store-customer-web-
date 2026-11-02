@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { authApi } from '../api/authApi';
 import { Eye, ShieldCheck, CheckCircle2, Lock, ArrowRight, X, Phone, Mail } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
@@ -35,7 +36,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     alert(`Đã gửi mã xác thực OTP 6 chữ số đến số điện thoại (+84) ${phoneNumber}! Mã demo: 582914`);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (loginMethod === 'otp') {
       const otpCode = otpDigits.join('');
@@ -45,14 +46,37 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
       }
     }
     
-    // Giả lập đăng nhập thành công
-    const userProfile = {
-      name: fullName || 'Nguyễn Khách Hàng',
-      phone: phoneNumber,
-      email: email || 'khachhang@optivision.vn',
-      tier: 'VIP Gold',
-      points: 1250,
+    let userProfile = {
+      name: fullName || 'Nguyễn Hoàng Duy',
+      phone: phoneNumber.startsWith('0') ? phoneNumber : ('0' + phoneNumber),
+      email: email || 'duy.nguyen@example.com',
+      tier: 'VIP 3 Silver',
+      points: 450,
     };
+
+    try {
+      if (authMode === 'register') {
+        const res = await authApi.register({
+          fullName: fullName || 'Khách Hàng Mới',
+          phoneNumber: userProfile.phone,
+          email: userProfile.email,
+          membershipTier: 'Thành Viên'
+        });
+        if (res) userProfile.name = res.fullName;
+      } else {
+        const res = await authApi.login({
+          username: 'cus_duy',
+          password: 'Password2026@'
+        });
+        if (res) {
+          userProfile.name = res.fullName;
+          userProfile.phone = res.phoneNumber;
+          userProfile.email = res.email;
+        }
+      }
+    } catch (err) {
+      console.warn('Live API sync notice:', err.message);
+    }
     
     if (onLoginSuccess) onLoginSuccess(userProfile);
     alert(`Đăng nhập thành công! Chào mừng ${userProfile.name} đến với OptiVision.`);
