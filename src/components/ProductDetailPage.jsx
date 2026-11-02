@@ -49,7 +49,7 @@ export default function ProductDetailPage({ product, onAddToCart, setActiveTab }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
       {/* 1. Breadcrumb (Ảnh 4 & 5) */}
       <nav className="text-xs text-slate-400 flex items-center gap-1.5 flex-wrap">
         <span onClick={() => setActiveTab('home')} className="hover:text-[#074768] cursor-pointer">
@@ -70,7 +70,7 @@ export default function ProductDetailPage({ product, onAddToCart, setActiveTab }
         {/* Left Column: Gallery & Try-On Actions */}
         <div className="lg:col-span-6 space-y-4">
           {/* Main Photo Frame */}
-          <div className="relative aspect-4/3 rounded-3xl bg-slate-50 border border-slate-200 overflow-hidden shadow-xs flex items-center justify-center p-6">
+          <div className="relative w-full h-[440px] sm:h-[480px] lg:h-[520px] rounded-3xl bg-slate-50 border border-slate-200 overflow-hidden shadow-xs flex items-center justify-center p-6">
             <img
               src={images[activeImageIndex]}
               alt="Bolon Graceful BJ3120"
@@ -126,11 +126,13 @@ export default function ProductDetailPage({ product, onAddToCart, setActiveTab }
                     : 'border-slate-200 hover:border-slate-300 bg-white'
                 }`}
               >
-                <img
-                  src={images[thumb.idx]}
-                  alt={thumb.label}
-                  className="w-full h-14 object-cover rounded-xl"
-                />
+                <div className="w-full h-16 sm:h-20 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center">
+                  <img
+                    src={images[thumb.idx]}
+                    alt={thumb.label}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
                 <span className="text-[10px] text-slate-500 font-semibold mt-1 truncate">
                   {thumb.label}
                 </span>
@@ -623,7 +625,7 @@ export default function ProductDetailPage({ product, onAddToCart, setActiveTab }
               brand: 'OPTI-VISION LAB',
               price: 150000,
               tag: 'Phụ kiện kèm',
-              image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80',
+              image: 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=600&q=80',
             },
           ].map((item) => (
             <div
@@ -631,7 +633,7 @@ export default function ProductDetailPage({ product, onAddToCart, setActiveTab }
               className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-lg transition p-4 flex flex-col justify-between"
             >
               <div>
-                <div className="relative aspect-4/3 rounded-xl bg-slate-50 overflow-hidden mb-3">
+                <div className="relative h-36 sm:h-40 w-full rounded-xl bg-slate-50 overflow-hidden mb-3">
                   <img
                     src={item.image}
                     alt={item.name}

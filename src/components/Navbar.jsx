@@ -9,13 +9,16 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openAuthMod
     { id: 'records', label: 'Hồ Sơ Thị Lực' },
     { id: 'warranty', label: 'Tra Cứu Bảo Hành' },
     { id: 'orders', label: 'Đơn Hàng' },
+    { id: 'stores', label: 'Cửa Hàng' },
+    { id: 'vouchers', label: 'Ưu Đãi & VIP' },
+    { id: 'policy', label: 'Chính Sách' },
   ];
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
       {/* Top micro bar */}
       <div className="bg-[#04334f] text-slate-200 text-xs py-1.5 px-4 hidden sm:block">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="max-w-[1600px] mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <span className="bg-[#0b5c87] text-[#97d7ff] px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide uppercase">
               Hệ Thống Chuẩn Y Khoa
@@ -35,7 +38,7 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openAuthMod
       </div>
 
       {/* Main navigation */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between gap-4">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between gap-6">
         {/* Brand Logo */}
         <div 
           onClick={() => setActiveTab('home')} 
@@ -78,8 +81,13 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openAuthMod
         <div className="flex items-center gap-2.5">
           {/* Notifications button */}
           <button 
+            onClick={() => setActiveTab('notifications')}
             aria-label="Thông báo"
-            className="relative p-2 text-slate-600 hover:text-[#074768] hover:bg-slate-100 rounded-full transition"
+            className={`relative p-2 rounded-full transition ${
+              activeTab === 'notifications' 
+                ? 'text-[#074768] bg-[#e0f2fe]' 
+                : 'text-slate-600 hover:text-[#074768] hover:bg-slate-100'
+            }`}
           >
             <Bell className="w-5 h-5" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
@@ -102,14 +110,18 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openAuthMod
           {/* User Account / VIP Button */}
           <button
             onClick={openAuthModal}
-            className="flex items-center gap-2 bg-[#074768] hover:bg-[#09577f] text-white px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl font-semibold text-xs sm:text-sm shadow-md shadow-[#074768]/20 transition active:scale-95 ml-1"
+            className="flex items-center gap-3 bg-[#074768] hover:bg-[#09577f] text-white pl-3.5 pr-5 py-2.5 rounded-xl font-semibold shadow-md shadow-[#074768]/20 transition-all active:scale-95 ml-2 border border-[#97d7ff]/20 min-w-[155px]"
           >
-            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-              <User className="w-3.5 h-3.5 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center border border-white/20 flex-shrink-0">
+              <User className="w-4 h-4 text-[#97d7ff]" />
             </div>
-            <div className="text-left hidden sm:block">
-              <div className="text-[10px] text-[#97d7ff] leading-none uppercase font-bold">Tài Khoản</div>
-              <div className="text-xs font-bold leading-tight">Khách hàng VIP</div>
+            <div className="text-left hidden sm:flex flex-col justify-center">
+              <span className="text-[10px] text-[#97d7ff] uppercase font-bold tracking-wider leading-none">
+                Tài Khoản
+              </span>
+              <span className="text-xs font-bold text-white whitespace-nowrap mt-1 leading-none">
+                Khách hàng VIP
+              </span>
             </div>
           </button>
         </div>
@@ -134,4 +146,3 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openAuthMod
     </header>
   );
 }
-

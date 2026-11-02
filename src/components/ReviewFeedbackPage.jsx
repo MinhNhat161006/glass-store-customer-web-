@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  Star, CheckCircle2, ShieldCheck, Camera, Upload, 
-  X, ArrowRight, Heart, Sparkles, AlertCircle, Phone, FileText, Check 
+import {
+  Star, CheckCircle2, ShieldCheck, Camera, Upload,
+  X, ArrowRight, Heart, Sparkles, AlertCircle, Phone, FileText, Check
 } from 'lucide-react';
 
 export default function ReviewFeedbackPage({ setActiveTab }) {
@@ -51,9 +51,8 @@ export default function ReviewFeedbackPage({ setActiveTab }) {
           className="p-1 focus:outline-none transition hover:scale-110"
         >
           <Star
-            className={`w-5 h-5 ${
-              star <= rating ? 'text-amber-400 fill-amber-400' : 'text-slate-300'
-            }`}
+            className={`w-5 h-5 ${star <= rating ? 'text-amber-400 fill-amber-400' : 'text-slate-300'
+              }`}
           />
         </button>
       ))}
@@ -62,7 +61,7 @@ export default function ReviewFeedbackPage({ setActiveTab }) {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* 1. Header Banner (Ảnh 1 chuẩn xác) */}
       <div className="bg-gradient-to-r from-sky-50 to-indigo-50/50 rounded-3xl border border-sky-200 p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xs">
         <div>
@@ -237,11 +236,10 @@ export default function ReviewFeedbackPage({ setActiveTab }) {
                     key={tag}
                     type="button"
                     onClick={() => toggleTag(tag)}
-                    className={`px-3 py-1.5 rounded-full font-semibold transition ${
-                      selectedTags.includes(tag)
+                    className={`px-3 py-1.5 rounded-full font-semibold transition ${selectedTags.includes(tag)
                         ? 'bg-[#074768] text-white shadow-xs'
                         : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                    }`}
+                      }`}
                   >
                     {selectedTags.includes(tag) ? `✓ ${tag}` : `+ ${tag}`}
                   </button>
@@ -426,3 +424,4 @@ export default function ReviewFeedbackPage({ setActiveTab }) {
     </div>
   );
 }
+
