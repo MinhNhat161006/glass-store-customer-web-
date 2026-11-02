@@ -28,7 +28,7 @@ export default function PolicyPage({ setActiveTab }) {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
       {/* 1. Header Banner (Ảnh 5 chuẩn xác) */}
       <div className="bg-gradient-to-r from-sky-50 via-white to-indigo-50/40 rounded-3xl border border-sky-200 p-6 sm:p-10 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-8">
         <div className="space-y-4 max-w-2xl">

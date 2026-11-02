@@ -6,7 +6,7 @@ import {
 
 export default function OrderDetailHubPage({ setActiveTab }) {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* 1. Header Stepper (Ảnh 2 & 3 chuẩn xác) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 text-xs">
         <div className="flex items-center gap-2 text-slate-500 font-mono text-[11px]">
