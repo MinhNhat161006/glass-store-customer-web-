@@ -17,6 +17,7 @@ import NotificationCenterPage from './components/NotificationCenterPage';
 import VoucherLoyaltyPage from './components/VoucherLoyaltyPage';
 import AuthModal from './components/AuthModal';
 import CartDrawer from './components/CartDrawer';
+import { authApi } from './api/authApi';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home'); 
@@ -25,12 +26,12 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProductDetail, setSelectedProductDetail] = useState(null);
-  const [currentUser, setCurrentUser] = useState({
-    name: 'Trần Hoàng Nam',
-    tier: 'VIP Silver',
-    code: '#VIP-59240',
-    points: 450
-  });
+  const [currentUser, setCurrentUser] = useState(() => authApi.getCurrentUser());
+
+  const handleLogout = () => {
+    authApi.logout();
+    setCurrentUser(null);
+  };
 
   // Cart state
   const [cart, setCart] = useState([
@@ -106,6 +107,8 @@ export default function App() {
         cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
         openAuthModal={() => setIsAuthOpen(true)}
         openCart={() => setIsCartOpen(true)}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
 
       {/* 2. Main Content Screens */}

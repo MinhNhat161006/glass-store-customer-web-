@@ -1,7 +1,7 @@
 import React from 'react';
-import { Eye, Bell, ShoppingBag, User, Phone } from 'lucide-react';
+import { Eye, Bell, ShoppingBag, User, Phone, LogOut } from 'lucide-react';
 
-export default function Navbar({ activeTab, setActiveTab, cartCount, openAuthModal, openCart }) {
+export default function Navbar({ activeTab, setActiveTab, cartCount, openAuthModal, openCart, currentUser, onLogout }) {
   const navItems = [
     { id: 'home', label: 'Trang Chủ' },
     { id: 'products', label: 'Sản Phẩm' },
@@ -108,22 +108,48 @@ export default function Navbar({ activeTab, setActiveTab, cartCount, openAuthMod
           </button>
 
           {/* User Account / VIP Button */}
-          <button
-            onClick={openAuthModal}
-            className="flex items-center gap-3 bg-[#074768] hover:bg-[#09577f] text-white pl-3.5 pr-5 py-2.5 rounded-xl font-semibold shadow-md shadow-[#074768]/20 transition-all active:scale-95 ml-2 border border-[#97d7ff]/20 min-w-[155px]"
-          >
-            <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center border border-white/20 flex-shrink-0">
-              <User className="w-4 h-4 text-[#97d7ff]" />
+          {currentUser ? (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5 bg-[#074768] text-white pl-3 pr-4 py-2 rounded-xl font-semibold shadow-md shadow-[#074768]/20 border border-[#97d7ff]/20">
+                <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center border border-white/20 flex-shrink-0">
+                  <User className="w-4 h-4 text-[#97d7ff]" />
+                </div>
+                <div className="text-left hidden sm:flex flex-col justify-center">
+                  <span className="text-[10px] text-[#97d7ff] uppercase font-bold tracking-wider leading-none">
+                    {currentUser.tier || 'Thành Viên'}
+                  </span>
+                  <span className="text-xs font-bold text-white whitespace-nowrap mt-1 leading-none">
+                    {currentUser.name || currentUser.fullName || 'Khách Hàng'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={onLogout}
+                title="Đăng xuất"
+                className="p-2 text-xs font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition flex items-center gap-1 border border-slate-200"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Đăng xuất</span>
+              </button>
             </div>
-            <div className="text-left hidden sm:flex flex-col justify-center">
-              <span className="text-[10px] text-[#97d7ff] uppercase font-bold tracking-wider leading-none">
-                Tài Khoản
-              </span>
-              <span className="text-xs font-bold text-white whitespace-nowrap mt-1 leading-none">
-                Khách hàng VIP
-              </span>
-            </div>
-          </button>
+          ) : (
+            <button
+              onClick={openAuthModal}
+              className="flex items-center gap-2.5 bg-[#074768] hover:bg-[#09577f] text-white px-4 py-2.5 rounded-xl font-semibold shadow-md shadow-[#074768]/20 transition-all active:scale-95 ml-2 border border-[#97d7ff]/20 min-w-[155px]"
+            >
+              <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center border border-white/20 flex-shrink-0">
+                <User className="w-4 h-4 text-[#97d7ff]" />
+              </div>
+              <div className="text-left hidden sm:flex flex-col justify-center">
+                <span className="text-[10px] text-[#97d7ff] uppercase font-bold tracking-wider leading-none">
+                  Xác Thực
+                </span>
+                <span className="text-xs font-bold text-white whitespace-nowrap mt-1 leading-none">
+                  Đăng Nhập / Đăng Ký
+                </span>
+              </div>
+            </button>
+          )}
         </div>
       </div>
 
