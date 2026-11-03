@@ -33,7 +33,7 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* 1. Breadcrumb & Title Banner (Ảnh 4 chuẩn xác) */}
       <nav className="text-xs text-slate-400 flex items-center gap-1.5">
         <span onClick={() => setActiveTab('home')} className="hover:text-[#074768] cursor-pointer">

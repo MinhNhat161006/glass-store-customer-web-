@@ -18,7 +18,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
       id: 'lens',
       title: 'Tròng Kính Kỹ Thuật Số',
       desc: 'Lọc 99% ánh sáng xanh, đổi màu mỏng nhẹ chuẩn khúc xạ.',
-      image: 'https://images.unsplash.com/photo-1582142839970-2b9da988941f?auto=format&fit=crop&w=600&q=80',
+      image: 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=600&q=80',
     },
     {
       id: 'sun',
@@ -30,7 +30,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
       id: 'accessory',
       title: 'Phụ Kiện Chuyên Dụng',
       desc: 'Hộp da khâu tay, khăn lau nano chống bám hơi nước cao cấp.',
-      image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80',
+      image: 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=600&q=80',
     },
   ];
 
@@ -85,7 +85,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
         <div className="absolute -right-20 -top-20 w-[500px] h-[500px] rounded-full bg-[#38bdf8]/15 blur-3xl pointer-events-none" />
         <div className="absolute left-1/3 -bottom-20 w-80 h-80 rounded-full bg-[#97d7ff]/10 blur-2xl pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="max-w-[1600px] mx-auto relative z-10">
           <div className="max-w-2xl space-y-6">
             <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
               Thấu thị tinh hoa, <br />
@@ -134,7 +134,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
       </section>
 
       {/* 2. Curated Optical Solutions (Giải Pháp Chăm Sóc Thị Giác Tuyển Lựa - Ảnh 2) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <span className="text-[11px] font-bold tracking-wider uppercase text-[#0284c7]">
@@ -160,7 +160,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
               onClick={() => setActiveTab('products')}
               className="group bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-[#0284c7] transition duration-300 cursor-pointer flex flex-col justify-between"
             >
-              <div className="relative aspect-4/3 overflow-hidden bg-slate-100">
+              <div className="relative h-44 sm:h-48 w-full overflow-hidden bg-slate-100">
                 <img
                   src={cat.image}
                   alt={cat.title}
@@ -181,7 +181,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
       </section>
 
       {/* 3. Bestsellers Section (Gọng Kính & Tròng Bán Chạy Nhất - Ảnh 2) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
             <span className="text-[11px] font-bold tracking-wider uppercase text-[#0284c7]">
@@ -222,7 +222,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
               key={item.id}
               className="bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm hover:shadow-lg transition flex flex-col justify-between"
             >
-              <div className="relative aspect-4/3 bg-slate-50 p-3 flex items-center justify-center overflow-hidden">
+              <div className="relative h-36 sm:h-40 bg-slate-50 p-2 flex items-center justify-center overflow-hidden">
                 <img
                   src={item.image}
                   alt={item.name}
@@ -233,7 +233,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
                 </span>
               </div>
 
-              <div className="p-4 flex-1 flex flex-col justify-between">
+              <div className="p-3 flex-1 flex flex-col justify-between">
                 <div>
                   <span className="text-[10px] font-bold uppercase text-[#0284c7] tracking-wider">
                     {item.brand}
@@ -261,7 +261,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
       </section>
 
       {/* 4. Electronic Prescription Callout Banner (Ảnh 2) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-[#f0f9ff] border border-[#bae6fd] rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-[#0284c7] text-white flex items-center justify-center shrink-0 shadow-md">
@@ -295,7 +295,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
       </section>
 
       {/* 5. 3 Guided Customer Journeys (Lựa Chọn Sản Phẩm Phù Hợp - Ảnh 2) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-xl mx-auto mb-10">
           <span className="text-[11px] font-bold tracking-wider uppercase text-[#0284c7]">
             QUY TRÌNH THÔNG MINH TẠI OPTIVISION
@@ -373,7 +373,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
 
       {/* 6. Big Stat Box "Vì Sao Hơn 1.000.000 Khách Hàng Tin Chọn OptiVision?" (Ảnh 2) */}
       <section className="bg-[#053752] text-white py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1600px] mx-auto">
           <div className="text-center max-w-xl mx-auto mb-12">
             <span className="text-[11px] font-bold tracking-wider uppercase text-[#38bdf8]">
               UY TÍN KHẲNG ĐỊNH QUA THỜI GIAN
@@ -415,7 +415,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
       </section>
 
       {/* 7. 4 Reasons to choose OptiVision (Ảnh 2) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-xl mx-auto mb-10">
           <span className="text-[11px] font-bold tracking-wider uppercase text-[#0284c7]">
             CAM KẾT TUYỆT ĐỐI
@@ -472,7 +472,7 @@ export default function HomePage({ setActiveTab, openBooking, openAuth, onAddToC
       </section>
 
       {/* 8. Showroom Locator & Map (Tìm Cơ Sở OptiVision Gần Nhất - Ảnh 2) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 sm:p-10">
           <div className="mb-6">
             <span className="text-[11px] font-bold tracking-wider uppercase text-[#0284c7]">

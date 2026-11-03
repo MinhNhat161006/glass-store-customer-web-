@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { productApi } from '../api/productApi';
 import { 
   Search, SlidersHorizontal, Grid, List, Check, ArrowRight, 
   ChevronDown, ShieldCheck, X 
@@ -13,6 +14,41 @@ export default function ProductCatalogPage({ onAddToCart, setActiveTab, onViewDe
   const [selectedShowroom, setSelectedShowroom] = useState(['Q1']);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [sortBy, setSortBy] = useState('NEWEST');
+  const [realProducts, setRealProducts] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchLiveProducts = async () => {
+      try {
+        setLoading(true);
+        const data = await productApi.getAllProducts();
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((p, idx) => {
+            const v = (p.variants && p.variants.length > 0) ? p.variants[0] : null;
+            return {
+              id: p.id,
+              sku: v ? v.sku : ('SKU-00' + p.id),
+              name: p.name,
+              specs: 'Tiêu chuẩn quốc tế ISO 13666',
+              category: p.productType || 'FRAME',
+              shape: (v && v.frameShape) ? v.frameShape.toUpperCase() : 'RECTANGLE',
+              material: (v && v.material) ? v.material.toUpperCase() : 'TITANIUM',
+              colors: ['#1e293b', '#64748b', '#0369a1'],
+              description: p.description,
+              price: v ? Number(v.price) : 2500000,
+              image: (v && v.imageUrl) ? v.imageUrl : 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&w=600&q=80',
+            };
+          });
+          setRealProducts(mapped);
+        }
+      } catch (err) {
+        console.warn('Real catalog fetch notice:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLiveProducts();
+  }, []);
 
   // Products Dataset khớp 100% Ảnh 3
   const allProducts = [
@@ -92,7 +128,7 @@ export default function ProductCatalogPage({ onAddToCart, setActiveTab, onViewDe
       colors: ['#e2e8f0', '#fef3c7'],
       description: 'Lõi kim loại chạm khắc laser tinh tế bên trong gọng trong suốt bắt sáng đỉnh cao.',
       price: 2100000,
-      image: 'https://images.unsplash.com/photo-1582142839970-2b9da988941f?auto=format&fit=crop&w=600&q=80',
+      image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=600&q=80',
     },
     {
       id: 7,
@@ -118,7 +154,7 @@ export default function ProductCatalogPage({ onAddToCart, setActiveTab, onViewDe
       colors: ['#38bdf8'],
       description: 'Tròng mỏng quang sai thấp, phủ lớp váng Nano chống trầy, lọc ánh sáng xanh máy tính.',
       price: 1950000,
-      image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80',
+      image: 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=600&q=80',
     },
   ];
 
@@ -152,7 +188,7 @@ export default function ProductCatalogPage({ onAddToCart, setActiveTab, onViewDe
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
       {/* 1. Breadcrumb */}
       <nav className="text-xs text-slate-400 flex items-center gap-1.5">
         <span onClick={() => setActiveTab('home')} className="hover:text-[#074768] cursor-pointer">
@@ -433,11 +469,11 @@ export default function ProductCatalogPage({ onAddToCart, setActiveTab, onViewDe
               >
                 {/* Image Container with SKU Tag & Color Dots */}
                 <div>
-                  <div className="relative aspect-4/3 bg-slate-50 p-2 flex items-center justify-center overflow-hidden">
+                  <div className="relative h-36 sm:h-40 bg-slate-50/90 p-2 flex items-center justify-center overflow-hidden">
                     <img
                       src={p.image}
                       alt={p.name}
-                      className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-contain rounded-lg group-hover:scale-105 transition-transform duration-500"
                     />
 
                     {/* SKU Tag */}
@@ -447,7 +483,7 @@ export default function ProductCatalogPage({ onAddToCart, setActiveTab, onViewDe
                   </div>
 
                   {/* Body Content */}
-                  <div className="p-4 space-y-2">
+                  <div className="p-3 space-y-1.5">
                     {/* Specs & Color Swatches */}
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-mono text-slate-400 font-semibold">
@@ -469,15 +505,15 @@ export default function ProductCatalogPage({ onAddToCart, setActiveTab, onViewDe
                       {p.name}
                     </h3>
 
-                    <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                    <p className="text-[11px] text-slate-500 line-clamp-1 leading-normal">
                       {p.description}
                     </p>
                   </div>
                 </div>
 
                 {/* Price & Action */}
-                <div className="p-4 pt-0">
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="px-3 pb-3 pt-0">
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                     <div>
                       <span className="text-sm font-black text-[#074768]">
                         {formatPrice(p.price)}
