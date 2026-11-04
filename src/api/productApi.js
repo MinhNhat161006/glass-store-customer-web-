@@ -11,6 +11,10 @@ const apiClient = axios.create({
 });
 
 export const productApi = {
+  getLensRecommendations: async (odSph, osSph) => {
+    const response = await apiClient.get('/api/products/lens-recommendations', { params: { odSph, osSph } });
+    return response.data.data;
+  },
   // Lấy danh sách sản phẩm (hỗ trợ lọc theo categoryId, productType, status)
   getAllProducts: async (params = {}) => {
     try {
