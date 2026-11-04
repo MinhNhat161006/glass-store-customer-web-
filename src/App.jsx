@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './components/HomePage';
@@ -17,6 +17,10 @@ import NotificationCenterPage from './components/NotificationCenterPage';
 import VoucherLoyaltyPage from './components/VoucherLoyaltyPage';
 import AuthModal from './components/AuthModal';
 import CartDrawer from './components/CartDrawer';
+import CheckoutModal from './components/CheckoutModal';
+import OrderConfirmation from './components/OrderConfirmation';
+import { addSelection } from './components/purchaseUtils';
+import { authApi } from './api/authApi';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home'); 
@@ -25,47 +29,22 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProductDetail, setSelectedProductDetail] = useState(null);
-  const [currentUser, setCurrentUser] = useState({
-    name: 'Trần Hoàng Nam',
-    tier: 'VIP Silver',
-    code: '#VIP-59240',
-    points: 450
-  });
+  const [currentUser, setCurrentUser] = useState(() => authApi.getCurrentUser());
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [lastPlacedOrder, setLastPlacedOrder] = useState(null);
+  const checkoutRequest = useRef(null);
 
-  // Cart state
-  const [cart, setCart] = useState([
-    {
-      id: 1,
-      sku: 'OPTI-TITAN-08',
-      name: 'Aurea Minimalist Pure Titanium',
-      price: 2450000,
-      quantity: 1,
-      image: 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&w=600&q=80',
-    },
-  ]);
-
-  const handleAddToCart = (product) => {
-    const existingIndex = cart.findIndex((item) => item.sku === product.sku);
-    if (existingIndex > -1) {
-      const updated = [...cart];
-      updated[existingIndex].quantity += 1;
-      setCart(updated);
-    } else {
-      setCart([
-        ...cart,
-        {
-          id: product.id || Date.now(),
-          sku: product.sku || `SKU-${Date.now()}`,
-          name: product.name,
-          price: product.price || 0,
-          quantity: 1,
-          image: product.image || 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?w=500',
-        },
-      ]);
-    }
-    setIsCartOpen(true);
+  const handleLogout = () => {
+    authApi.logout();
+    setCurrentUser(null);
   };
 
+  const [cart, setCart] = useState([]);
+  const handleAddToCart = selection => {
+    if (!selection.items && !selection.productType) { handleViewDetail(selection); return; }
+    setCart(addSelection(cart, selection));
+    setIsCartOpen(true);
+  };
   const handleViewDetail = (product) => {
     setSelectedProductDetail(product);
     setActiveTab('product-detail');
@@ -91,12 +70,10 @@ export default function App() {
   };
 
   const handleCheckout = () => {
-    setCart([]);
+    if (!currentUser) { setIsCartOpen(false); setIsAuthOpen(true); return; }
     setIsCartOpen(false);
-    setActiveTab('order-hub'); // Chuyển sang màn hình xác nhận gia công Delta 200
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setCheckoutOpen(true);
   };
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-[#074768] selection:text-white">
       {/* 1. Header Navigation Bar */}
@@ -106,6 +83,8 @@ export default function App() {
         cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
         openAuthModal={() => setIsAuthOpen(true)}
         openCart={() => setIsCartOpen(true)}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
 
       {/* 2. Main Content Screens */}
@@ -183,7 +162,7 @@ export default function App() {
         )}
 
         {/* Screen 10: Phiếu Xác Nhận Đơn Hàng, Mã QR Check-in & Tiến Độ Lab Delta 200 */}
-        {activeTab === 'order-hub' && (
+        {activeTab === 'order-hub' && !lastPlacedOrder && (
           <OrderDetailHubPage
             setActiveTab={setActiveTab}
           />
@@ -218,6 +197,11 @@ export default function App() {
         )}
       </main>
 
+      {activeTab === 'order-hub' && lastPlacedOrder && <OrderConfirmation order={lastPlacedOrder} onContinue={() => setActiveTab('products')} />}
+      {checkoutOpen && <CheckoutModal cart={cart} user={currentUser} requestRef={checkoutRequest} onClose={() => setCheckoutOpen(false)} onSuccess={order => {
+        checkoutRequest.current = null;
+        setLastPlacedOrder(order); setCheckoutOpen(false); setCart([]); setActiveTab('order-hub'); window.scrollTo({top:0});
+      }} />}
       {/* 3. Footer Chuẩn Nhãn Khoa */}
       <Footer />
 
