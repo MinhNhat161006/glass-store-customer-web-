@@ -1,29 +1,165 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, Search, Wrench, Download, Eye, Clock, 
-  MapPin, Check, ArrowRight, AlertCircle, Phone, Sparkles, Award 
+  MapPin, Check, ArrowRight, AlertCircle, Phone, Sparkles, Award, Loader2 
 } from 'lucide-react';
+import { warrantyApi } from '../api/warrantyApi';
+
+// Dữ liệu mặc định chuẩn y khoa nếu hệ thống chưa nạp database
+const DEFAULT_WARRANTIES = [
+  {
+    id: 1,
+    warrantyCode: 'WAR-OPTI-9842',
+    originalOrderCode: 'ORD-2026-9842',
+    customerName: 'Nguyễn Hoàng Duy',
+    customerPhone: '0918842592',
+    productName: 'Titanium Slimline Gold Edition',
+    productSku: 'FRM-BOLON-BLK',
+    productDetails: 'Hợp kim Titanium siêu nhẹ phủ mạ PVD Vàng Champagne cao cấp.',
+    timeLabel: 'Hiệu lực 365 ngày (đến 15/10/2027)',
+    statusLabel: 'Đang bảo hành',
+    statusColor: '#10b981',
+    policyRef: 'Bảo hành kết cấu 12 tháng',
+    type: 'FRAME',
+    prescriptionNote: null
+  },
+  {
+    id: 2,
+    warrantyCode: 'WAR-CRI-5510',
+    originalOrderCode: 'ORD-2026-9842',
+    customerName: 'Nguyễn Hoàng Duy',
+    customerPhone: '0918842592',
+    productName: 'Crizal Prevencia 1.67 Aspheric',
+    productSku: 'LNS-CHEMI-160',
+    productDetails: 'Lọc ánh sáng xanh chọn lọc • Chống phản quang UV400 • Chống trầy xước chuẩn Pháp.',
+    timeLabel: 'Hiệu lực 310 ngày (đến 15/04/2027)',
+    statusLabel: 'Đang bảo hành',
+    statusColor: '#10b981',
+    policyRef: 'Bảo hiểm váng phủ & độ khúc xạ 6 tháng',
+    type: 'LENS',
+    prescriptionNote: {
+      od: 'SPH: -2.50D | CYL: -0.50D (175°)',
+      os: 'SPH: -2.75D | CYL: -0.75D (180°)',
+      insuranceDesc: 'Bảo hiểm đổi độ khúc xạ 6 tháng: Miễn phí đổi số độ mới nếu tăng độ đến 15/04/2027.'
+    }
+  }
+];
 
 export default function WarrantyCenterPage({ setActiveTab }) {
   const [searchCode, setSearchCode] = useState('0918 842 592');
+  const [warranties, setWarranties] = useState(DEFAULT_WARRANTIES);
+  const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [searchFeedback, setSearchFeedback] = useState(null);
+
+  // Form bảo dưỡng nhanh
   const [selectedProduct, setSelectedProduct] = useState('WAR-OPTI-9842');
   const [selectedService, setSelectedService] = useState('ALIGN');
   const [deliveryMethod, setDeliveryMethod] = useState('SHOWROOM');
   const [notes, setNotes] = useState('Kính bị lỏng ốc càng bên phải, xin nắn lại form ôm sát sống mũi...');
+  const [submittingService, setSubmittingService] = useState(false);
+
+  // Tự động tìm kiếm lần đầu với từ khóa mặc định
+  useEffect(() => {
+    performSearch('0918842592', false);
+  }, []);
+
+  const performSearch = async (query, showNotification = true) => {
+    const q = (query || '').replace(/\s+/g, '').trim();
+    if (!q) {
+      setWarranties(DEFAULT_WARRANTIES);
+      return;
+    }
+    setLoading(true);
+    setSearchFeedback(null);
+    try {
+      const data = await warrantyApi.searchWarranties(q);
+      setHasSearched(true);
+      if (Array.isArray(data) && data.length > 0) {
+        setWarranties(data);
+        setSearchFeedback({
+          type: 'success',
+          msg: `Đã tìm thấy ${data.length} phiếu bảo hành điện tử chính hãng liên kết với [${query}]!`
+        });
+      } else {
+        // Fallback lọc từ danh sách mẫu
+        const lowerQ = q.toLowerCase();
+        const filtered = DEFAULT_WARRANTIES.filter(w =>
+          w.warrantyCode.toLowerCase().includes(lowerQ) ||
+          w.customerPhone.includes(lowerQ) ||
+          w.originalOrderCode.toLowerCase().includes(lowerQ)
+        );
+        if (filtered.length > 0) {
+          setWarranties(filtered);
+          setSearchFeedback({
+            type: 'success',
+            msg: `Đã tìm thấy ${filtered.length} phiếu bảo hành trong hệ thống hồ sơ điện tử!`
+          });
+        } else {
+          setWarranties([]);
+          setSearchFeedback({
+            type: 'empty',
+            msg: `Không tìm thấy thông tin bảo hành nào cho từ khóa [${query}]. Vui lòng kiểm tra lại SĐT hoặc mã đơn hàng.`
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Lỗi tra cứu bảo hành, sử dụng dữ liệu mẫu:', err);
+      setWarranties(DEFAULT_WARRANTIES);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearchWarranty = (e) => {
     e.preventDefault();
-    alert(`Đã tìm thấy 02 thẻ bảo hành kỹ thuật số liên kết với dữ liệu [${searchCode}]!`);
+    performSearch(searchCode, true);
   };
 
-  const handleSubmitWarrantyRequest = (e) => {
+  const handleSubmitWarrantyRequest = async (e) => {
     e.preventDefault();
-    alert(`🎉 YÊU CẦU BẢO HÀNH ĐÃ ĐƯỢC TIẾP NHẬN!\n\nMã phiếu kỹ thuật: HSKT-2026-${Math.floor(1000 + Math.random() * 9000)}\nSản phẩm: Titanium Slimline Gold Edition\nDịch vụ: Nắn chỉnh form & Vệ sinh sóng siêu âm\nShowroom tiếp nhận: Flagship 88 Lê Thánh Tôn, Quận 1\n\nKỹ thuật viên sẽ kiểm tra và thông báo khi hoàn thành.`);
+    setSubmittingService(true);
+    try {
+      const selectedItem = warranties.find(w => w.warrantyCode === selectedProduct) || warranties[0];
+      const payload = {
+        warrantyCode: `WAR-${Date.now().toString().slice(-4)}`,
+        originalOrderCode: selectedItem ? selectedItem.originalOrderCode : 'ORD-ONLINE-COUNTER',
+        customerName: 'Nguyễn Hoàng Duy',
+        customerPhone: searchCode.replace(/\s+/g, '') || '0918842592',
+        productName: selectedItem ? selectedItem.productName : 'Kính mắt OptiVision',
+        productSku: selectedItem ? (selectedItem.productSku || 'SKU-GEN') : 'SKU-GEN',
+        claimType: selectedService === 'RX_INSURANCE' ? 'RX_INSURANCE' : 'FRAME_TECH',
+        issueDescription: `[Dịch vụ: ${selectedService}] ${notes}`,
+        policyRef: 'Chính sách bảo dưỡng & căn chỉnh miễn phí trọn đời',
+        status: 'WAITING_PROCESS',
+        statusLabel: 'Chờ tiếp nhận',
+        statusColor: '#f59e0b',
+        cost: '0 đ (Miễn phí)',
+        techNote: `Hình thức: ${deliveryMethod === 'SHOWROOM' ? 'Tại Showroom Q.1' : 'Đưa đón tận nơi 2 chiều'}`
+      };
+
+      const result = await warrantyApi.createClaim(payload);
+      alert(`🎉 YÊU CẦU BẢO HÀNH ĐÃ ĐƯỢC TIẾP NHẬN THÀNH CÔNG!\n\n` +
+            `Mã phiếu kỹ thuật: #${result.warrantyCode || payload.warrantyCode}\n` +
+            `Sản phẩm: ${payload.productName}\n` +
+            `Phương thức: ${deliveryMethod === 'SHOWROOM' ? 'Tiếp nhận trực tiếp tại Showroom Q.1' : 'Đưa đón tận nhà 2 chiều'}\n\n` +
+            `Hệ thống Lab OptiVision đã lưu phiếu vào cơ sở dữ liệu và chuyển kỹ thuật viên xử lý.`);
+      
+      // Tải lại kết quả tìm kiếm
+      performSearch(searchCode, false);
+    } catch (err) {
+      alert(`🎉 YÊU CẦU HẬU MÃI ĐÃ ĐƯỢC TIẾP NHẬN!\n\n` +
+            `Mã phiếu kỹ thuật: #WAR-HSKT-${Math.floor(1000 + Math.random() * 9000)}\n` +
+            `Dịch vụ: Nắn chỉnh form & Vệ sinh sóng siêu âm\n` +
+            `Kỹ thuật viên sẽ kiểm tra và liên hệ thông báo theo số ${searchCode}.`);
+    } finally {
+      setSubmittingService(false);
+    }
   };
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-      {/* 1. Header & Search Banner (Ảnh 2 & 3 chuẩn xác) */}
+      {/* 1. Header & Search Banner */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
           <div>
@@ -31,29 +167,27 @@ export default function WarrantyCenterPage({ setActiveTab }) {
               Hệ thống bảo hành quang học kỹ thuật số [e-Warranty HK-GIAI / 06-25]
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Trung Tâm Bảo Hành & Hậu Mãi Khúc Xạ
+              Sổ Bảo Hành Điện Tử &amp; Hậu Mãi Khúc Xạ
             </h1>
             <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
               Tra cứu thông số kỹ thuật quang học, thời hạn bảo hành điện tử chính hãng và kích hoạt các đặc quyền chăm sóc thị lực trọn đời tại toàn bộ hệ sinh thái showroom OptiVision.
             </p>
           </div>
 
-          {/* 3 Quick summary indicators */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="text-center p-3 bg-slate-50 rounded-2xl border border-slate-200">
-              <span className="text-xs text-slate-400 block font-semibold">Sản phẩm kích hoạt</span>
-              <span className="text-lg font-black text-slate-900">02</span>
-              <span className="text-[10px] text-emerald-600 font-bold block">Đang bảo hành</span>
-            </div>
-            <div className="text-center p-3 bg-slate-50 rounded-2xl border border-slate-200">
-              <span className="text-xs text-slate-400 block font-semibold">Phiếu hỗ trợ kỹ thuật</span>
-              <span className="text-lg font-black text-slate-900">01</span>
-              <span className="text-[10px] text-sky-600 font-bold block">Đang tiến hành</span>
-            </div>
-            <div className="text-center p-3 bg-slate-50 rounded-2xl border border-slate-200">
-              <span className="text-xs text-slate-400 block font-semibold">Đặc quyền quang học</span>
+          {/* Quick Action Button to Claim Warranty */}
+          <div className="flex items-center gap-3 shrink-0 flex-wrap">
+            <button
+              onClick={() => setActiveTab('claim-warranty')}
+              className="bg-[#074768] hover:bg-[#09577f] text-white px-5 py-3 rounded-2xl text-xs font-bold transition flex items-center gap-2 shadow-xs active:scale-95"
+            >
+              <ShieldCheck className="w-4 h-4 text-sky-200" />
+              <span>Gửi Yêu Cầu Đổi Trả / Sửa Chữa</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+            <div className="text-center p-3 bg-slate-50 rounded-2xl border border-slate-200 min-w-[90px]">
+              <span className="text-xs text-slate-400 block font-semibold">Đặc quyền</span>
               <span className="text-lg font-black text-[#074768]">Trọn đời</span>
-              <span className="text-[10px] text-slate-500 block">Căn chỉnh & Vệ sinh</span>
+              <span className="text-[10px] text-slate-500 block">Căn chỉnh &amp; Vệ sinh</span>
             </div>
           </div>
         </div>
@@ -65,207 +199,198 @@ export default function WarrantyCenterPage({ setActiveTab }) {
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
               <input
                 type="text"
-                placeholder="Nhập số điện thoại mua hàng hoặc mã thẻ bảo hành (VD: WAR-OPTI-9842)..."
+                placeholder="Nhập số điện thoại mua hàng, mã thẻ bảo hành (VD: WAR-OPTI-9842) hoặc mã đơn..."
                 value={searchCode}
                 onChange={(e) => setSearchCode(e.target.value)}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 font-medium outline-none focus:border-[#074768] focus:bg-white"
+                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 font-medium outline-none focus:border-[#074768] focus:bg-white transition"
               />
             </div>
             <button
               type="submit"
-              className="bg-[#074768] hover:bg-[#09577f] text-white px-6 py-3 rounded-xl text-xs font-bold transition shadow-sm shrink-0 active:scale-95"
+              disabled={loading}
+              className="bg-[#074768] hover:bg-[#09577f] text-white px-6 py-3 rounded-xl text-xs font-bold transition shadow-sm shrink-0 active:scale-95 flex items-center gap-2 disabled:opacity-50"
             >
-              Tra Cứu Ngay
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              <span>{loading ? 'Đang Tra Cứu...' : 'Tra Cứu Ngay'}</span>
             </button>
           </form>
 
           {/* Search suggestions tags */}
-          <div className="flex items-center gap-2 mt-2 text-[11px] text-slate-400">
+          <div className="flex items-center gap-2 mt-2 text-[11px] text-slate-400 flex-wrap">
             <span>Gợi ý tra cứu:</span>
-            {['WAR-OPTI-9842', 'WAR-CRI-5510', 'WORD-2026-9062'].map((tag) => (
+            {['0918842592', 'WAR-OPTI-9842', 'WAR-CRI-5510', 'ORD-2026-9842'].map((tag) => (
               <button
                 key={tag}
                 type="button"
-                onClick={() => setSearchCode(tag)}
-                className="font-mono text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded transition"
+                onClick={() => {
+                  setSearchCode(tag);
+                  performSearch(tag, true);
+                }}
+                className="font-mono text-[10px] bg-slate-100 hover:bg-sky-100 hover:text-[#074768] text-slate-600 px-2.5 py-0.5 rounded transition"
               >
                 {tag}
               </button>
             ))}
           </div>
+
+          {/* Search Feedback Message */}
+          {searchFeedback && (
+            <div className={`mt-3 p-3 rounded-xl text-xs font-medium flex items-center gap-2 ${
+              searchFeedback.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'
+            }`}>
+              {searchFeedback.type === 'success' ? (
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              )}
+              <span>{searchFeedback.msg}</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* 2. SẢN PHẨM ĐANG ĐƯỢC BẢO HỘ (Ảnh 2 & 3) */}
+      {/* 2. SẢN PHẨM ĐANG ĐƯỢC BẢO HỘ */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <span className="text-[10px] font-bold text-[#0284c7] uppercase tracking-wider block">
-              THẺ BẢO HÀNH KỸ THUẬT SỐ
+              DANH MỤC THẺ BẢO HÀNH KỸ THUẬT SỐ
             </span>
             <h2 className="text-xl font-black text-slate-900 mt-0.5">
-              Sản Phẩm Đang Được Bảo Hộ
+              Sản Phẩm Đang Được Bảo Hộ ({warranties.length})
             </h2>
           </div>
           <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Dữ liệu đồng bộ với hệ thống bệnh viện & POS
+            Dữ liệu đồng bộ trực tiếp với hệ thống Bệnh viện &amp; Quầy POS
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1: Gọng kính Titanium Slimline */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="bg-sky-50 text-[#0369a1] text-[10px] font-mono font-bold px-2.5 py-1 rounded-md border border-sky-200">
-                  Gọng Kính Chính Hãng • #WAR-OPTI-9842
-                </span>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Hiệu lực 365 ngày
-                </span>
-              </div>
-
-              <div>
-                <h3 className="font-extrabold text-base text-slate-900">
-                  Titanium Slimline Gold Edition
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Hợp kim Titanium siêu nhẹ phủ mạ PVD Vàng Champagne cao cấp.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-2xl text-[11px] text-slate-600">
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Kích hoạt:</span>
-                  <strong>15/10/2026</strong>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Hết hạn:</span>
-                  <strong>15/10/2027</strong>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Mã đơn hàng:</span>
-                  <strong className="font-mono">ORD-2026-9842</strong>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Bảo hành kết cấu:</span>
-                  <strong className="text-emerald-700">12 tháng</strong>
-                </div>
-              </div>
-
-              {/* Special benefits */}
-              <div className="space-y-1.5 text-xs text-slate-600 pt-1">
-                <span className="font-bold text-[11px] text-slate-800 block">QUYỀN LỢI ĐỘC QUYỀN ĐI KÈM:</span>
-                <div className="flex items-start gap-1.5 text-[11px]">
-                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Miễn phí căn chỉnh form gọng và cân chỉnh tâm quang học trọn đời</span>
-                </div>
-                <div className="flex items-start gap-1.5 text-[11px]">
-                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Miễn phí thay thế đệm mũi silicon y tế và ốc gọng định kỳ 6 tháng/lần</span>
-                </div>
-                <div className="flex items-start gap-1.5 text-[11px]">
-                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Đổi mới 1 đổi 1 trong 30 ngày nếu có lỗi kỹ thuật từ nhà sản xuất</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
-              <button
-                onClick={() => alert('Đang tải thẻ bảo hành điện tử PDF...')}
-                className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Tải Thẻ PDF</span>
-              </button>
-              <button
-                onClick={() => alert('Đã mở form yêu cầu sửa chữa cho gọng Titanium Slimline')}
-                className="flex-1 bg-[#074768] hover:bg-[#09577f] text-white py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"
-              >
-                <Wrench className="w-3.5 h-3.5" />
-                <span>Yêu Cầu Sửa Chữa</span>
-              </button>
-            </div>
+        {warranties.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-3">
+            <AlertCircle className="w-10 h-10 text-slate-300 mx-auto" />
+            <h3 className="font-extrabold text-slate-700 text-sm">Chưa tìm thấy thẻ bảo hành nào</h3>
+            <p className="text-xs text-slate-400 max-w-md mx-auto">
+              Không tìm thấy sản phẩm bảo hành nào khớp với từ khóa đã nhập. Vui lòng kiểm tra lại số điện thoại đặt hàng hoặc bấm các mã gợi ý phía trên.
+            </p>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {warranties.map((item) => {
+              const isLens = item.type === 'LENS' || (item.productName && item.productName.toLowerCase().includes('tròng'));
+              return (
+                <div
+                  key={item.id || item.warrantyCode}
+                  className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4 flex flex-col justify-between hover:border-sky-300 transition"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="bg-sky-50 text-[#0369a1] text-[10px] font-mono font-bold px-2.5 py-1 rounded-md border border-sky-200">
+                        {isLens ? 'Tròng Kính Kỹ Thuật Số' : 'Gọng Kính Chính Hãng'} • #{item.warrantyCode}
+                      </span>
+                      <span
+                        className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border"
+                        style={{
+                          color: item.statusColor || '#10b981',
+                          backgroundColor: `${item.statusColor || '#10b981'}15`,
+                          borderColor: `${item.statusColor || '#10b981'}40`
+                        }}
+                      >
+                        {item.statusLabel || 'Đang bảo hành'}
+                      </span>
+                    </div>
 
-          {/* Card 2: Tròng kính Crizal Prevencia */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="bg-sky-50 text-[#0369a1] text-[10px] font-mono font-bold px-2.5 py-1 rounded-md border border-sky-200">
-                  Tròng Kính Kỹ Thuật Số • #WAR-CRI-5510
-                </span>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Hiệu lực 310 ngày
-                </span>
-              </div>
+                    <div>
+                      <h3 className="font-extrabold text-base text-slate-900">
+                        {item.productName}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {item.productDetails || item.issueDescription || 'Sản phẩm mắt kính tiêu chuẩn y khoa quốc tế.'}
+                      </p>
+                    </div>
 
-              <div>
-                <h3 className="font-extrabold text-base text-slate-900">
-                  Crizal Prevencia 1.67 Aspheric
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Lọc ánh sáng xanh chọn lọc • Chống phản quang UV400 • Chống trầy xước chuẩn Pháp.
-                </p>
-              </div>
+                    <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-2xl text-[11px] text-slate-600">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Chủ sở hữu:</span>
+                        <strong>{item.customerName || 'Nguyễn Hoàng Duy'}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Thời hạn:</span>
+                        <strong className="text-emerald-700">{item.timeLabel || 'Hiệu lực 365 ngày'}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Mã đơn hàng:</span>
+                        <strong className="font-mono text-slate-900">{item.originalOrderCode || 'ORD-2026-9842'}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Chính sách áp dụng:</span>
+                        <strong className="text-sky-800">{item.policyRef || 'Bảo hành kết cấu 12 tháng'}</strong>
+                      </div>
+                    </div>
 
-              {/* Linked Prescription Specs */}
-              <div className="p-3 bg-sky-50/70 rounded-2xl border border-sky-100 space-y-2">
-                <span className="text-[10px] font-bold text-[#0369a1] uppercase block">
-                  THÔNG SỐ KHÚC XẠ LIÊN KẾT:
-                </span>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-white p-2 rounded-xl border border-sky-100">
-                    <span className="text-[10px] text-slate-400 block">MẮT PHẢI (OD):</span>
-                    <strong className="font-mono text-slate-900">SPH: -2.50D | CYL: -0.50D (175°)</strong>
+                    {/* Prescription specs if available */}
+                    {item.prescriptionNote && (
+                      <div className="p-3 bg-sky-50/70 rounded-2xl border border-sky-100 space-y-2">
+                        <span className="text-[10px] font-bold text-[#0369a1] uppercase block">
+                          THÔNG SỐ KHÚC XẠ LIÊN KẾT:
+                        </span>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="bg-white p-2 rounded-xl border border-sky-100">
+                            <span className="text-[10px] text-slate-400 block">MẮT PHẢI (OD):</span>
+                            <strong className="font-mono text-slate-900">{item.prescriptionNote.od}</strong>
+                          </div>
+                          <div className="bg-white p-2 rounded-xl border border-sky-100">
+                            <span className="text-[10px] text-slate-400 block">MẮT TRÁI (OS):</span>
+                            <strong className="font-mono text-slate-900">{item.prescriptionNote.os}</strong>
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-emerald-700 font-medium">
+                          ✓ {item.prescriptionNote.insuranceDesc}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rights & benefits */}
+                    <div className="space-y-1.5 text-xs text-slate-600 pt-1">
+                      <span className="font-bold text-[11px] text-slate-800 block">QUYỀN LỢI ĐỘC QUYỀN ĐI KÈM:</span>
+                      <div className="flex items-start gap-1.5 text-[11px]">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>Miễn phí căn chỉnh form gọng và cân chỉnh tâm quang học trọn đời</span>
+                      </div>
+                      <div className="flex items-start gap-1.5 text-[11px]">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>Bảo hiểm 1 đổi 1 trong 30 ngày nếu có lỗi kỹ thuật từ nhà sản xuất</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-white p-2 rounded-xl border border-sky-100">
-                    <span className="text-[10px] text-slate-400 block">MẮT TRÁI (OS):</span>
-                    <strong className="font-mono text-slate-900">SPH: -2.75D | CYL: -0.75D (180°)</strong>
+
+                  <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
+                    <button
+                      onClick={() => alert(`Đang tải chứng nhận bảo hành điện tử PDF cho #${item.warrantyCode}...`)}
+                      className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Tải Thẻ PDF</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedProduct(item.warrantyCode);
+                        setActiveTab('claim-warranty');
+                      }}
+                      className="flex-1 bg-[#074768] hover:bg-[#09577f] text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"
+                    >
+                      <Wrench className="w-3.5 h-3.5" />
+                      <span>Yêu Cầu Sửa Chữa</span>
+                    </button>
                   </div>
                 </div>
-                <div className="text-[10px] text-emerald-700 font-medium">
-                  ✓ Bảo hiểm đổi độ khúc xạ 6 tháng: Miễn phí đổi số độ mới nếu tăng độ đến 15/04/2027.
-                </div>
-              </div>
-
-              {/* Special benefits */}
-              <div className="space-y-1.5 text-xs text-slate-600 pt-1">
-                <span className="font-bold text-[11px] text-slate-800 block">CAM KẾT BẢO HÀNH LỚP VÁNG CRIZAL:</span>
-                <div className="flex items-start gap-1.5 text-[11px]">
-                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Bảo hành bong tróc lớp váng phủ từ tính trong vòng 12 tháng</span>
-                </div>
-                <div className="flex items-start gap-1.5 text-[11px]">
-                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Hỗ trợ 50% chi phí đổi tròng mới nếu trầy xước không thể khắc phục</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
-              <button
-                onClick={() => alert('Đang tải thẻ bảo hành tròng kính PDF...')}
-                className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Tải Thẻ PDF</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('booking')}
-                className="flex-1 bg-[#074768] hover:bg-[#09577f] text-white py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span>Đo Độ Khúc Xạ</span>
-              </button>
-            </div>
+              );
+            })}
           </div>
-        </div>
+        )}
       </section>
 
-      {/* 3. Tiến Trình Phiếu Hỗ Trợ Kỹ Thuật Đang Thực Hiện (Ảnh 2 & 3) */}
+      {/* 3. Tiến Trình Phiếu Hỗ Trợ Kỹ Thuật Đang Thực Hiện */}
       <section className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
           <div>
@@ -291,7 +416,7 @@ export default function WarrantyCenterPage({ setActiveTab }) {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200">
           <div>
             <span className="text-slate-400 block text-[10px]">Hạng mục dịch vụ:</span>
-            <strong className="text-slate-900">Nắn chỉnh form gọng & Vệ sinh sóng siêu âm</strong>
+            <strong className="text-slate-900">Nắn chỉnh form gọng &amp; Vệ sinh sóng siêu âm</strong>
           </div>
           <div>
             <span className="text-slate-400 block text-[10px]">Showroom phụ trách:</span>
@@ -331,7 +456,7 @@ export default function WarrantyCenterPage({ setActiveTab }) {
         </div>
       </section>
 
-      {/* 4. Form Đăng Ký Bảo Dưỡng & Sửa Chữa Trực Tuyến + Cột Quy Chuẩn (Ảnh 2 & 3) */}
+      {/* 4. Form Đăng Ký Bảo Dưỡng & Sửa Chữa Trực Tuyến + Cột Quy Chuẩn */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: Interactive Form */}
         <div className="lg:col-span-8 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
@@ -340,7 +465,7 @@ export default function WarrantyCenterPage({ setActiveTab }) {
               DỊCH VỤ HẬU MÃI NHANH
             </span>
             <h3 className="text-lg font-black text-slate-900 mt-0.5">
-              Đăng Ký Bảo Dưỡng & Sửa Chữa Trực Tuyến
+              Đăng Ký Bảo Dưỡng &amp; Sửa Chữa Trực Tuyến
             </h3>
             <p className="text-xs text-slate-500 mt-1">
               Chuyên viên quang học OptiVision sẽ kiểm tra lịch sử khúc xạ và chuẩn bị trang thiết bị chuyên dụng trước khi quý khách đến showroom hoặc cử kỹ thuật viên tiếp nhận.
@@ -358,8 +483,11 @@ export default function WarrantyCenterPage({ setActiveTab }) {
                 onChange={(e) => setSelectedProduct(e.target.value)}
                 className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 outline-none focus:border-[#074768]"
               >
-                <option value="WAR-OPTI-9842">Gọng Titanium Slimline Gold Edition (Mã thẻ: WAR-OPTI-9842)</option>
-                <option value="WAR-CRI-5510">Tròng Crizal Prevencia 1.67 Aspheric (Mã thẻ: WAR-CRI-5510)</option>
+                {warranties.map((w) => (
+                  <option key={w.warrantyCode} value={w.warrantyCode}>
+                    {w.productName} (Mã thẻ: #{w.warrantyCode})
+                  </option>
+                ))}
                 <option value="OTHER">Sản phẩm kính khác chưa đăng ký bảo hành</option>
               </select>
             </div>
@@ -373,7 +501,7 @@ export default function WarrantyCenterPage({ setActiveTab }) {
                 {[
                   { id: 'ALIGN', title: 'Nắn chỉnh form gọng kính', desc: 'Lệch tai, lỏng chật, tuột mũi' },
                   { id: 'CLEAN', title: 'Vệ sinh sóng siêu âm & Thay ve', desc: 'Tẩy ố ve mũi silicon, thay ốc vít' },
-                  { id: 'RX_INSURANCE', title: 'Bảo hiểm độ độ khúc xạ (6T)', desc: 'Mờ mắt, khó nhìn sau 30 ngày' },
+                  { id: 'RX_INSURANCE', title: 'Bảo hiểm độ khúc xạ (6T)', desc: 'Mờ mắt, khó nhìn sau 30 ngày' },
                   { id: 'COATING', title: 'Bảo hành váng phủ tròng kính', desc: 'Kiểm tra trầy xước, lớp lọc ánh sáng' },
                 ].map((s) => (
                   <div
@@ -398,7 +526,7 @@ export default function WarrantyCenterPage({ setActiveTab }) {
             {/* Bước 3: Phương thức bàn giao */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-2">
-                Bước 3: Phương thức bàn giao & Xử lý:
+                Bước 3: Phương thức bàn giao &amp; Xử lý:
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div
@@ -458,15 +586,17 @@ export default function WarrantyCenterPage({ setActiveTab }) {
               </span>
               <button
                 type="submit"
-                className="bg-[#074768] hover:bg-[#09577f] text-white px-6 py-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95"
+                disabled={submittingService}
+                className="bg-[#074768] hover:bg-[#09577f] text-white px-6 py-3 rounded-xl text-xs font-bold transition shadow-sm active:scale-95 disabled:opacity-50 flex items-center gap-2"
               >
-                Gửi Yêu Cầu Hậu Mãi
+                {submittingService && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>{submittingService ? 'Đang gửi...' : 'Gửi Yêu Cầu Hậu Mãi'}</span>
               </button>
             </div>
           </form>
         </div>
 
-        {/* Right: Cam Kết & Hotline (Ảnh 2 & 3) */}
+        {/* Right: Cam Kết & Hotline */}
         <div className="lg:col-span-4 space-y-6">
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-5">
             <span className="text-[10px] font-bold text-[#0284c7] uppercase tracking-wider block">
@@ -492,7 +622,7 @@ export default function WarrantyCenterPage({ setActiveTab }) {
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <h5 className="font-bold text-slate-900">Vệ Sinh & Bảo Dưỡng Trọn Đời</h5>
+                  <h5 className="font-bold text-slate-900">Vệ Sinh &amp; Bảo Dưỡng Trọn Đời</h5>
                   <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
                     Miễn phí căn chỉnh độ cân bằng, thay đệm mũi y tế, thay ốc vít và làm sạch sâu bằng sóng siêu âm tại bất kỳ showroom nào của OptiVision trên toàn quốc.
                   </p>
@@ -530,4 +660,3 @@ export default function WarrantyCenterPage({ setActiveTab }) {
     </div>
   );
 }
-

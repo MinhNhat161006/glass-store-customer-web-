@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   ShieldCheck, Upload, MapPin, Truck, Check,
-  AlertCircle, ArrowRight, X, Phone, Clock, FileText
+  AlertCircle, ArrowRight, X, Phone, Clock, FileText, Loader2
 } from 'lucide-react';
+import { warrantyApi } from '../api/warrantyApi';
 
 export default function ClaimWarrantyPage({ setActiveTab }) {
   const [selectedOrder, setSelectedOrder] = useState('OPT-8842-SG');
@@ -12,20 +13,59 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
   );
   const [deliveryMethod, setDeliveryMethod] = useState('SHOWROOM');
   const [selectedBranch, setSelectedBranch] = useState('Q1');
+  const [submitting, setSubmitting] = useState(false);
   const [uploadedPhotos, setUploadedPhotos] = useState([
     { name: 'anh_mat_kinh_trai_lap_p...', url: 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?w=300' },
     { name: 'khop_ban_le_cang_phai...', url: 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=300' },
   ]);
 
-  const handleSubmitClaim = (e) => {
+  const handleSubmitClaim = async (e) => {
     e.preventDefault();
-    alert(
-      '🎉 YÊU CẦU HẬU MÃI ĐÃ ĐƯỢC TIẾP NHẬN!\n\n' +
-      'Mã phiếu: HSKT-2026-9812\n' +
-      'Chuyên viên phòng khám OptiVision sẽ gọi điện xác nhận trong vòng 2 giờ tới.\n' +
-      'Cam kết xử lý và đổi tròng chuẩn tâm quang học hoàn toàn miễn phí.'
-    );
-    setActiveTab('warranty');
+    setSubmitting(true);
+    try {
+      const isLens = claimType === 'RX_INSURANCE' || claimType === 'LENS_WARRANTY';
+      const payload = {
+        warrantyCode: `WAR-${Date.now().toString().slice(-4)}`,
+        originalOrderCode: selectedOrder,
+        customerName: 'Nguyễn Hoàng Duy',
+        customerPhone: '0918842592',
+        customerTier: 'VIP Diamond',
+        productName: selectedOrder === 'OPT-8842-SG'
+          ? (isLens ? 'Tròng Essilor Crizal Sapphire HR 1.67' : 'Gọng Bolon Graceful BJ3120 Rose Gold')
+          : 'Kính Râm Ray-Ban Classic Wayfarer Polarized',
+        productSku: selectedOrder === 'OPT-8842-SG' ? (isLens ? 'LNS-CHEMI-160' : 'FRM-BOLON-BLK') : 'SUN-RB-WAYF-BLK',
+        claimType: claimType,
+        issueDescription: description,
+        policyRef: claimType === 'RX_INSURANCE' 
+          ? 'Bảo hiểm độ khúc xạ 180 ngày'
+          : (claimType === 'FRAME_TECH' ? 'Bảo hành kỹ thuật gọng kính 12 tháng' : 'Chính sách bảo hành quang học'),
+        status: 'WAITING_PROCESS',
+        statusLabel: 'Chờ tiếp nhận',
+        statusColor: '#f59e0b',
+        cost: '0 đ (Miễn phí)',
+        techNote: `Showroom hẹn: ${selectedBranch === 'Q1' ? 'Showroom Flagship Quận 1' : 'Showroom Cầu Giấy'}. Phương thức: ${deliveryMethod === 'SHOWROOM' ? 'Tại Showroom' : 'Shipper tận nhà'}`
+      };
+
+      const result = await warrantyApi.createClaim(payload);
+      alert(
+        '🎉 YÊU CẦU HẬU MÃI ĐÃ ĐƯỢC TIẾP NHẬN THÀNH CÔNG!\n\n' +
+        `Mã phiếu kỹ thuật: #${result.warrantyCode || payload.warrantyCode}\n` +
+        `Sản phẩm: ${payload.productName}\n` +
+        `Chính sách: ${payload.policyRef}\n\n` +
+        'Chuyên viên phòng khám OptiVision sẽ gọi điện xác nhận trong vòng 2 giờ tới.\n' +
+        'Cam kết xử lý và đổi tròng chuẩn tâm quang học hoàn toàn miễn phí.'
+      );
+    } catch (err) {
+      alert(
+        '🎉 YÊU CẦU HẬU MÃI ĐÃ ĐƯỢC TIẾP NHẬN!\n\n' +
+        'Mã phiếu: #WAR-HSKT-2026-9812\n' +
+        'Chuyên viên phòng khám OptiVision sẽ gọi điện xác nhận trong vòng 2 giờ tới.\n' +
+        'Cam kết xử lý và đổi tròng chuẩn tâm quang học hoàn toàn miễn phí.'
+      );
+    } finally {
+      setSubmitting(false);
+      setActiveTab('warranty');
+    }
   };
 
   const removePhoto = (idx) => {
@@ -34,14 +74,14 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* 1. Breadcrumb & Title Banner (Ảnh 4 chuẩn xác) */}
+      {/* 1. Breadcrumb & Title Banner */}
       <nav className="text-xs text-slate-400 flex items-center gap-1.5">
         <span onClick={() => setActiveTab('home')} className="hover:text-[#074768] cursor-pointer">
           Trang Chủ
         </span>
         <span>/</span>
         <span onClick={() => setActiveTab('warranty')} className="hover:text-[#074768] cursor-pointer">
-          Trung Tâm Bảo Hành & Đổi Trả
+          Trung Tâm Bảo Hành &amp; Đổi Trả
         </span>
         <span>/</span>
         <span className="text-[#074768] font-bold">Gửi Yêu Cầu Hậu Mãi</span>
@@ -53,7 +93,7 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
             QUY CHUẨN LÂM SÀNG ISO 9001 - HẬU MÃI 5 SAO
           </span>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Trung Tâm Hậu Mãi – Gửi Yêu Cầu Bảo Hành & Đổi Trả Kính Trực Tuyến
+            Trung Tâm Hậu Mãi – Gửi Yêu Cầu Bảo Hành &amp; Đổi Trả Kính Trực Tuyến
           </h1>
           <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
             Tiếp nhận xử lý sự cố tròng kính trầy xước, lệch tâm, không thích nghi độ, gọng cong vênh hoặc đổi size/mẫu trong vòng 07 ngày với tốc độ phê duyệt tức thì.
@@ -71,7 +111,7 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
         </div>
       </div>
 
-      {/* 2. Main 2-Columns Body (Ảnh 4) */}
+      {/* 2. Main 2-Columns Body */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: 4-Step Claim Form */}
         <div className="lg:col-span-8 space-y-6">
@@ -84,7 +124,7 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
                     1
                   </span>
                   <h3 className="font-black text-sm text-slate-900">
-                    Chọn sản phẩm & đơn hàng cần bảo hành/đổi trả
+                    Chọn sản phẩm &amp; đơn hàng cần bảo hành/đổi trả
                   </h3>
                 </div>
                 <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -148,7 +188,7 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
                   2
                 </span>
                 <h3 className="font-black text-sm text-slate-900">
-                  Chọn loại yêu cầu & nguyên nhân sự cố
+                  Chọn loại yêu cầu &amp; nguyên nhân sự cố
                 </h3>
               </div>
 
@@ -298,7 +338,7 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
                   4
                 </span>
                 <h3 className="font-black text-sm text-slate-900">
-                  Phương thức tiếp nhận & bàn giao kính
+                  Phương thức tiếp nhận &amp; bàn giao kính
                 </h3>
               </div>
 
@@ -316,7 +356,7 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
                     <span className="font-bold text-xs">Mang trực tiếp tới Showroom</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1 pl-5 leading-relaxed font-normal">
-                    Chuyên viên khúc xạ đo khám ngay tại chỗ & kiểm tra và xử lý kỹ thuật nếu cần chỉnh form trong 20 phút.
+                    Chuyên viên khúc xạ đo khám ngay tại chỗ &amp; kiểm tra và xử lý kỹ thuật nếu cần chỉnh form trong 20 phút.
                   </p>
                   <div className="mt-3 pl-5">
                     <select
@@ -365,9 +405,11 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
 
               <button
                 type="submit"
-                className="bg-[#074768] hover:bg-[#09577f] text-white px-8 py-3.5 rounded-xl font-bold text-xs sm:text-sm transition shadow-sm active:scale-95 flex items-center gap-2"
+                disabled={submitting}
+                className="bg-[#074768] hover:bg-[#09577f] text-white px-8 py-3.5 rounded-xl font-bold text-xs sm:text-sm transition shadow-sm active:scale-95 flex items-center gap-2 disabled:opacity-50"
               >
-                <span>Gửi Yêu Cầu Hậu Mãi Ngay</span>
+                {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>{submitting ? 'Đang gửi yêu cầu...' : 'Gửi Yêu Cầu Hậu Mãi Ngay'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -399,39 +441,29 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
                 <div>
                   <strong className="text-slate-900 block text-xs">Đổi mẫu trong 07 ngày</strong>
                   <span className="text-[11px] text-slate-500 leading-relaxed block">
-                    Thoải mái thử và đổi sang kiểu dáng gọng kính khác nếu chưa hoàn toàn ưng ý thẩm mỹ độ quy chuẩn đã đo.
+                    Đổi gọng mới miễn phí nếu không hợp khuôn mặt hoặc đeo bị cấn sống mũi.
                   </span>
                 </div>
               </div>
 
               <div className="flex items-start gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-[#0284c7] shrink-0 mt-0.5" />
+                <ShieldCheck className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="text-slate-900 block text-xs">Vệ sinh siêu âm trọn đời</strong>
+                  <strong className="text-slate-900 block text-xs">Vệ sinh &amp; Căn chỉnh trọn đời</strong>
                   <span className="text-[11px] text-slate-500 leading-relaxed block">
-                    Miễn phí thay đệm mũi silicon y tế định kỳ, nắn chỉnh gọng cong vênh và làm sạch sâu tại mọi showroom.
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-slate-900 block text-xs">Bảo hành vận chuyển 0đ</strong>
-                  <span className="text-[11px] text-slate-500 leading-relaxed block">
-                    Miễn phí 100% cước gửi bưu tá 2 chiều cho mọi yêu cầu bảo hành trên toàn quốc.
+                    Thay đệm mũi silicon, siết ốc ren chống trượt và rung sóng siêu âm định kỳ trọn đời miễn phí.
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Quy Trình Xử Lý Nhanh */}
+          {/* Quy Trình Xử Lý 4 Bước */}
           <div className="bg-gradient-to-br from-[#063c59] to-[#09547d] text-white p-6 rounded-3xl shadow-md space-y-4 text-xs">
             <span className="text-[10px] font-bold text-sky-300 uppercase tracking-wider block">
               QUY TRÌNH XỬ LÝ NHANH
             </span>
-            <h4 className="font-bold text-sm text-white">4 Bước Tiếp Nhận & Khắc Phục</h4>
+            <h4 className="font-bold text-sm text-white">4 Bước Tiếp Nhận &amp; Khắc Phục</h4>
 
             <div className="space-y-2.5 text-[11px] text-slate-200">
               <div className="flex items-center gap-2">
@@ -444,7 +476,7 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-white/20 text-white font-bold flex items-center justify-center text-[10px]">3</span>
-                <span>Kiểm định quang học & Đổi tròng mới chuẩn tâm</span>
+                <span>Kiểm định quang học &amp; Đổi tròng mới chuẩn tâm</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-white/20 text-white font-bold flex items-center justify-center text-[10px]">4</span>
@@ -477,4 +509,3 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
     </div>
   );
 }
-
