@@ -55,16 +55,11 @@ export default function ClaimWarrantyPage({ setActiveTab }) {
         'Chuyên viên phòng khám OptiVision sẽ gọi điện xác nhận trong vòng 2 giờ tới.\n' +
         'Cam kết xử lý và đổi tròng chuẩn tâm quang học hoàn toàn miễn phí.'
       );
+      setActiveTab("warranty");
     } catch (err) {
-      alert(
-        '🎉 YÊU CẦU HẬU MÃI ĐÃ ĐƯỢC TIẾP NHẬN!\n\n' +
-        'Mã phiếu: #WAR-HSKT-2026-9812\n' +
-        'Chuyên viên phòng khám OptiVision sẽ gọi điện xác nhận trong vòng 2 giờ tới.\n' +
-        'Cam kết xử lý và đổi tròng chuẩn tâm quang học hoàn toàn miễn phí.'
-      );
+      alert(err.message || "Không thể gửi yêu cầu. Vui lòng kiểm tra và thử lại.");
     } finally {
       setSubmitting(false);
-      setActiveTab('warranty');
     }
   };
 

@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '';
+const authHeaders = () => { const token=localStorage.getItem('optivision_customer_token'); return token ? {Authorization: `Bearer ${token}`} : {}; };
 
 export const warrantyApi = {
   /**
@@ -6,7 +7,7 @@ export const warrantyApi = {
    */
   async getAllWarranties() {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/warranties`);
+      const res = await fetch(`${API_BASE_URL}/api/warranties`, { headers: authHeaders() });
       if (!res.ok) throw new Error('Không thể kết nối API bảo hành');
       return await res.json();
     } catch (err) {
@@ -21,7 +22,7 @@ export const warrantyApi = {
   async getWarrantyByCode(code) {
     try {
       const cleanCode = encodeURIComponent(code.trim().replace(/^#/, ''));
-      const res = await fetch(`${API_BASE_URL}/api/warranties/code/${cleanCode}`);
+      const res = await fetch(`${API_BASE_URL}/api/warranties/code/${cleanCode}`, {headers: authHeaders()});
       if (res.status === 404) return null;
       if (!res.ok) throw new Error('Không tìm thấy mã bảo hành');
       return await res.json();
@@ -38,7 +39,7 @@ export const warrantyApi = {
     try {
       if (!query || !query.trim()) return [];
       const cleanQuery = query.trim().replace(/^#/, '');
-      const res = await fetch(`${API_BASE_URL}/api/warranties/search?q=${encodeURIComponent(cleanQuery)}`);
+      const res = await fetch(`${API_BASE_URL}/api/warranties/search?q=${encodeURIComponent(cleanQuery)}`, {headers: authHeaders()});
       if (res.ok) {
         return await res.json();
       }
@@ -64,7 +65,7 @@ export const warrantyApi = {
   async createClaim(warrantyData) {
     const res = await fetch(`${API_BASE_URL}/api/warranties`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify(warrantyData)
     });
     if (!res.ok) {
