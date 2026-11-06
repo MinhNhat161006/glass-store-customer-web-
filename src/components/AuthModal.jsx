@@ -82,6 +82,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
         });
 
         const userProfile = {
+          ...data,
           name: data.fullName || 'Khách Hàng',
           email: data.email,
           phone: data.phoneNumber || '',
