@@ -28,6 +28,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setErrorMessage('');
     setSuccessMessage('');
 
@@ -86,8 +87,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           name: data.fullName || 'Khách Hàng',
           email: data.email,
           phone: data.phoneNumber || '',
-          tier: 'Khách Hàng Thành Viên',
-          points: 100,
           roles: data.roles
         };
 
