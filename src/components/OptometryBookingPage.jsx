@@ -1,24 +1,93 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   Check, Calendar, Clock, MapPin, User, ShieldCheck, 
   FileText, AlertCircle, ChevronRight, Phone, Mail, Award 
 } from 'lucide-react';
+import { locationApi } from '../api/locationApi';
+import { appointmentApi } from '../api/appointmentApi';
+import { authApi } from '../api/authApi';
 
-export default function OptometryBookingPage({ setActiveTab }) {
+function toDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export default function OptometryBookingPage({
+  setActiveTab,
+  initialLocationCode = '',
+  currentUser,
+  openAuth
+}) {
   // Booking Form State
-  const [branch, setBranch] = useState('Q1');
+  const [branch, setBranch] = useState(initialLocationCode);
+  const [locations, setLocations] = useState([]);
+  const [locationsLoading, setLocationsLoading] = useState(true);
+  const [locationsError, setLocationsError] = useState('');
   const [service, setService] = useState('BASIC');
   const [specialist, setSpecialist] = useState('BS_QUAN');
-  const [selectedDate, setSelectedDate] = useState('16');
+  const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()));
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('09:45 - 10:15');
+  const [bookingSaving, setBookingSaving] = useState(false);
+  const [bookingError, setBookingError] = useState('');
+  const [bookingMessage, setBookingMessage] = useState('');
 
   // Customer info
-  const [customerName, setCustomerName] = useState('Nguyễn Hoàng Nam');
-  const [phone, setPhone] = useState('0918 234 567');
-  const [email, setEmail] = useState('hoangnam.opt@gmail.com');
+  const [customerName, setCustomerName] = useState(currentUser?.fullName || currentUser?.name || '');
+  const [phone, setPhone] = useState(currentUser?.phoneNumber || currentUser?.phone || '');
+  const [email, setEmail] = useState(currentUser?.email || '');
   const [notifyChannel, setNotifyChannel] = useState('ZALO');
   const [symptoms, setSymptoms] = useState(['BLUR_FAR', 'TIRED_EYES']);
   const [clinicalNotes, setClinicalNotes] = useState('Đang đeo kính cận -2.25 độ được 1.5 năm, dạo gần đây đọc sách hay bị mỏi mắt...');
+  const dateOptions = useMemo(() => Array.from({ length: 7 }, (_, offset) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + offset);
+    return {
+      value: toDateKey(date),
+      day: String(date.getDate()),
+      sub: offset === 0
+        ? 'HÔM NAY'
+        : new Intl.DateTimeFormat('vi-VN', { weekday: 'short' }).format(date)
+    };
+  }), []);
+  const selectedMonth = new Intl.DateTimeFormat('vi-VN', {
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date(`${selectedDate}T00:00:00`));
+  const formattedSelectedDate = new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).format(new Date(`${selectedDate}T00:00:00`));
+
+  useEffect(() => {
+    let active = true;
+    locationApi.getActiveLocations()
+      .then((result) => {
+        if (!active) return;
+        setLocations(result);
+        setBranch((current) => result.some((location) => location.code === current)
+          ? current
+          : result[0]?.code || '');
+        setLocationsError('');
+      })
+      .catch((error) => {
+        if (active) setLocationsError(error.message || 'Không thể tải địa điểm.');
+      })
+      .finally(() => {
+        if (active) setLocationsLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    setCustomerName(currentUser.fullName || currentUser.name || '');
+    setPhone(currentUser.phoneNumber || currentUser.phone || '');
+    setEmail(currentUser.email || '');
+  }, [currentUser]);
 
   const toggleSymptom = (sym) => {
     if (symptoms.includes(sym)) {
@@ -28,9 +97,42 @@ export default function OptometryBookingPage({ setActiveTab }) {
     }
   };
 
-  const handleConfirmBooking = (e) => {
+  const handleConfirmBooking = async (e) => {
     e.preventDefault();
-    alert(`🎉 ĐẶT LỊCH HẸN THÀNH CÔNG!\n\nKhách hàng: ${customerName}\nChi nhánh: Flagship Quận 1 (TP.HCM)\nThời gian: ${selectedTimeSlot} - Ngày ${selectedDate}/05/2026\nChuyên viên: BS. Vũ Minh Quân\nChi phí: 0đ (Được miễn phí 100%)\n\nMã hẹn OPT-2026-${Math.floor(1000 + Math.random() * 9000)} đã được gửi đến SĐT/Zalo ${phone}.`);
+    const selectedLocation = locations.find((location) => location.code === branch);
+    if (!selectedLocation) {
+      setLocationsError('Vui lòng chọn một địa điểm đang hoạt động.');
+      return;
+    }
+    if (!authApi.getToken()) {
+      setBookingError('Vui lòng đăng nhập tài khoản khách hàng để lưu lịch hẹn.');
+      openAuth?.();
+      return;
+    }
+    if (!customerName.trim() || !phone.trim()) {
+      setBookingError('Vui lòng nhập họ tên và số điện thoại.');
+      return;
+    }
+    setBookingSaving(true);
+    setBookingError('');
+    setBookingMessage('');
+    try {
+      const saved = await appointmentApi.createAppointment({
+        ticketType: 'E-Pass Online',
+        customerName: customerName.trim(),
+        customerPhone: phone.trim(),
+        locationCode: selectedLocation.code,
+        scheduledDate: selectedDate,
+        scheduledTime: selectedTimeSlot
+      });
+      setBookingMessage(
+        `Đã lưu lịch hẹn ${saved.ticketCode} tại ${selectedLocation.name} (${selectedLocation.code}) vào ${selectedDate}, ${selectedTimeSlot}.`
+      );
+    } catch (error) {
+      setBookingError(error.message || 'Không thể lưu lịch hẹn.');
+    } finally {
+      setBookingSaving(false);
+    }
   };
 
   return (
@@ -64,7 +166,7 @@ export default function OptometryBookingPage({ setActiveTab }) {
               </span>
               <div>
                 <h3 className="font-extrabold text-sm text-slate-900">
-                  Chọn Chi Nhánh Khám
+                  Chọn Địa Điểm Khám
                 </h3>
                 <p className="text-[11px] text-slate-500">
                   Hệ thống phòng khám khúc xạ tiêu chuẩn cao tại các showroom đô thị.
@@ -72,17 +174,29 @@ export default function OptometryBookingPage({ setActiveTab }) {
               </div>
             </div>
 
+            {locationsLoading && <div role="status" className="py-6 text-center text-xs text-slate-500">Đang tải địa điểm…</div>}
+            {locationsError && (
+              <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+                {locationsError}
+              </div>
+            )}
+            {!locationsLoading && !locations.length && !locationsError && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                Chưa có địa điểm đang hoạt động.
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
-              {[
-                { id: 'Q1', name: 'CN Quận 1 (TP.HCM)', address: '88 Lê Thánh Tôn, Bến Nghé, Q.1', slots: '16 Phòng đo chuẩn' },
-                { id: 'HK', name: 'CN Hoàn Kiếm (Hà Nội)', address: '24 Tràng Tiền, Hoàn Kiếm', slots: '12 Phòng đo chuẩn' },
-                { id: 'HC', name: 'CN Hải Châu (Đà Nẵng)', address: '102 Nguyễn Văn Linh, Hải Châu', slots: '10 Phòng đo chuẩn' },
-              ].map((b) => (
+              {locations.map((b) => (
                 <div
-                  key={b.id}
-                  onClick={() => setBranch(b.id)}
+                  key={b.code}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') setBranch(b.code);
+                  }}
+                  onClick={() => setBranch(b.code)}
                   className={`p-3.5 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
-                    branch === b.id
+                    branch === b.code
                       ? 'border-[#074768] bg-[#f0f9ff] text-[#074768] font-bold shadow-xs'
                       : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-slate-50'
                   }`}
@@ -90,13 +204,15 @@ export default function OptometryBookingPage({ setActiveTab }) {
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-bold text-xs">{b.name}</span>
-                      {branch === b.id && <Check className="w-3.5 h-3.5 text-[#074768]" />}
+                      {branch === b.code && <Check className="w-3.5 h-3.5 text-[#074768]" />}
                     </div>
-                    <p className="text-[11px] font-normal text-slate-500">{b.address}</p>
+                    <span className="text-[10px] text-slate-500">
+                      {[b.area, b.locationType === 'BRANCH' ? 'Chi nhánh' : b.locationType === 'WAREHOUSE' ? 'Kho' : 'Chưa phân loại']
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-emerald-600 font-semibold mt-2 block">
-                    ✓ {b.slots}
-                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono mt-2 block">{b.code}</span>
                 </div>
               ))}
             </div>
@@ -217,24 +333,16 @@ export default function OptometryBookingPage({ setActiveTab }) {
             {/* Date selection bar */}
             <div>
               <span className="text-xs font-bold text-slate-700 block mb-2">
-                Ngày Thăm Khám (Tháng 5, 2026):
+                Ngày thăm khám ({selectedMonth}):
               </span>
               <div className="grid grid-cols-7 gap-2 text-center text-xs">
-                {[
-                  { day: '16', label: 'HÔM NAY', sub: 'Thứ 6' },
-                  { day: '17', label: '17', sub: 'Thứ 7' },
-                  { day: '18', label: '18', sub: 'Chủ Nhật' },
-                  { day: '19', label: '19', sub: 'Thứ 2' },
-                  { day: '20', label: '20', sub: 'Thứ 3' },
-                  { day: '21', label: '21', sub: 'Thứ 4' },
-                  { day: '22', label: '22', sub: 'Thứ 5' },
-                ].map((d) => (
+                {dateOptions.map((d) => (
                   <button
-                    key={d.day}
+                    key={d.value}
                     type="button"
-                    onClick={() => setSelectedDate(d.day)}
+                    onClick={() => setSelectedDate(d.value)}
                     className={`p-2.5 rounded-xl border transition flex flex-col items-center justify-center ${
-                      selectedDate === d.day
+                      selectedDate === d.value
                         ? 'border-[#074768] bg-[#074768] text-white shadow-sm'
                         : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
                     }`}
@@ -517,7 +625,7 @@ export default function OptometryBookingPage({ setActiveTab }) {
                 <Clock className="w-4 h-4 text-[#074768] shrink-0 mt-0.5" />
                 <div>
                   <span className="text-[10px] text-slate-400 block font-semibold">Thời gian hẹn:</span>
-                  <span className="font-bold text-slate-900">09:45 - 10:15 Hôm nay, 16/05/2026</span>
+                  <span className="font-bold text-slate-900">{selectedTimeSlot}, {formattedSelectedDate}</span>
                 </div>
               </div>
 
@@ -543,12 +651,23 @@ export default function OptometryBookingPage({ setActiveTab }) {
             </div>
 
             {/* Confirm CTA */}
+            {bookingError && (
+              <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+                {bookingError}
+              </div>
+            )}
+            {bookingMessage && (
+              <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+                {bookingMessage}
+              </div>
+            )}
             <button
               onClick={handleConfirmBooking}
+              disabled={bookingSaving || locationsLoading || !locations.length}
               className="w-full bg-[#074768] hover:bg-[#09577f] text-white py-3.5 rounded-xl font-bold text-xs sm:text-sm shadow-lg shadow-[#074768]/25 flex items-center justify-center gap-2 transition active:scale-98"
             >
               <Check className="w-4 h-4" />
-              <span>Xác Nhận Đặt Lịch Hẹn Ngay</span>
+              <span>{bookingSaving ? 'Đang lưu lịch hẹn…' : 'Xác Nhận Đặt Lịch Hẹn Ngay'}</span>
             </button>
 
             <p className="text-[10px] text-slate-400 text-center leading-relaxed">
@@ -634,4 +753,3 @@ export default function OptometryBookingPage({ setActiveTab }) {
     </div>
   );
 }
-

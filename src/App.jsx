@@ -122,6 +122,8 @@ export default function App() {
         {activeTab === 'booking' && (
           <OptometryBookingPage
             setActiveTab={setActiveTab}
+            currentUser={currentUser}
+            openAuth={() => setIsAuthOpen(true)}
           />
         )}
 
