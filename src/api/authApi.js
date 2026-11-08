@@ -1,85 +1,64 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '';
+const TOKEN_KEY = 'optivision_customer_token';
+const USER_KEY = 'optivision_customer_user';
+
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}/api/v1/auth/${path}`, options);
+  const envelope = await response.json().catch(() => null);
+  if (!response.ok || !envelope || (envelope.code != null && envelope.code >= 400)) {
+    const error = new Error(envelope?.message || 'Không thể xác thực với máy chủ. Vui lòng thử lại.');
+    error.status = response.status;
+    throw error;
+  }
+  return envelope.data;
+}
+
+function customerProfile(data) {
+  if (!data?.id || !Array.isArray(data.roles) || !data.roles.some(role => role === 'ROLE_CUSTOMER' || role === 'CUSTOMER'))
+    throw new Error('Tài khoản không có quyền truy cập cổng khách hàng.');
+  return { ...data, name: data.fullName || data.username, phone: data.phoneNumber || '' };
+}
 
 export const authApi = {
-  /**
-   * Đăng nhập khách hàng bằng email và mật khẩu (Không dùng OTP)
-   * @param {Object} credentials { email, password }
-   */
   async login(credentials) {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials)
+    authApi.logout();
+    const data = await request('login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(credentials),
     });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || 'Đăng nhập thất bại');
-    }
-    if (data.data?.token) {
-      localStorage.setItem('optivision_customer_token', data.data.token);
-      localStorage.setItem('optivision_customer_user', JSON.stringify(data.data));
-    }
-    return data.data;
+    if (!data?.token || data.token.split('.').length !== 3)
+      throw new Error('Máy chủ không trả về phiên đăng nhập hợp lệ.');
+    const profile = customerProfile(data);
+    localStorage.setItem(TOKEN_KEY, data.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(profile));
+    return profile;
   },
 
-  /**
-   * Đăng ký tài khoản khách hàng mới (ACTIVE ngay, Không OTP)
-   * @param {Object} customerData { fullName, email, password, phoneNumber }
-   */
   async register(customerData) {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(customerData)
+    const data = await request('register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(customerData),
     });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || 'Đăng ký thất bại');
-    }
-    return data.data;
+    if (!data?.id) throw new Error('Máy chủ chưa xác nhận tạo tài khoản.');
+    return data;
   },
 
-  /**
-   * Lấy thông tin tài khoản hiện tại từ JWT
-   */
   async getMe() {
-    const token = localStorage.getItem('optivision_customer_token');
-    if (!token) return null;
-
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    if (!res.ok) {
-      this.logout();
-      return null;
+    const token = authApi.getToken();
+    if (!token || token.split('.').length !== 3) { authApi.logout(); return null; }
+    try {
+      const profile = customerProfile(await request('me', { headers: { Authorization: `Bearer ${token}` } }));
+      localStorage.setItem(USER_KEY, JSON.stringify(profile));
+      return profile;
+    } catch (error) {
+      if (error.status === 401 || error.status === 403 || !error.status) authApi.logout();
+      throw error;
     }
-    const data = await res.json();
-    return data.data;
   },
 
-  /**
-   * Đăng xuất khỏi hệ thống
-   */
-  logout() {
-    localStorage.removeItem('optivision_customer_token');
-    localStorage.removeItem('optivision_customer_user');
-  },
-
+  logout() { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); },
   getCurrentUser() {
-    const userStr = localStorage.getItem('optivision_customer_user');
-    if (userStr) {
-      try {
-        return JSON.parse(userStr);
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
+    if (!authApi.getToken()) return null;
+    try { return JSON.parse(localStorage.getItem(USER_KEY)); }
+    catch { return null; }
   },
-
-  getToken() {
-    return localStorage.getItem('optivision_customer_token');
-  }
+  getToken() { return localStorage.getItem(TOKEN_KEY); },
 };

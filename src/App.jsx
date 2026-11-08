@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './components/HomePage';
@@ -29,7 +29,13 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProductDetail, setSelectedProductDetail] = useState(null);
-  const [currentUser, setCurrentUser] = useState(() => authApi.getCurrentUser());
+  const [currentUser, setCurrentUser] = useState(null);
+  useEffect(() => {
+    let active = true;
+    authApi.getMe().then(user => { if (active) setCurrentUser(user); })
+      .catch(() => { if (active) setCurrentUser(null); });
+    return () => { active = false; };
+  }, []);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [lastPlacedOrder, setLastPlacedOrder] = useState(null);
   const checkoutRequest = useRef(null);
@@ -132,6 +138,8 @@ export default function App() {
           <VisionRecordPage
             setActiveTab={setActiveTab}
             onAddToCart={handleAddToCart}
+            currentUser={currentUser}
+            openAuth={() => setIsAuthOpen(true)}
           />
         )}
 
